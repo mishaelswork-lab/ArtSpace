@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>INKFIND — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #09090c;
+  --surface: #111116;
+  --surface2: #16161c;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --gold: #c9a96e;
+  --gold-dim: rgba(201,169,110,0.15);
+  --text: #e8e4dc;
+  --muted: rgba(232,228,220,0.45);
+  --faint: rgba(232,228,220,0.08);
+  --green: #4caf78;
+  --green-dim: rgba(76,175,120,0.12);
+  --red: #e05555;
+  --red-dim: rgba(224,85,85,0.12);
+  --yellow: #f0b429;
+  --yellow-dim: rgba(240,180,41,0.12);
+}
+
+html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; }
+
+/* ══ LOGIN SCREEN ══ */
+#loginScreen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(201,169,110,0.06) 0%, transparent 60%);
+  padding: 20px;
+}
+.login-card {
+  width: 100%; max-width: 400px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 24px; padding: 40px 36px; text-align: center;
+}
+.login-logo { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 900; letter-spacing: .25em; margin-bottom: 4px; }
+.login-logo span { color: var(--gold); }
+.login-tagline { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 32px; }
+.role-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 28px; }
+.role-tab {
+  padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface2); cursor: pointer; transition: all .2s;
+  font-size: 13px; color: var(--muted);
+}
+.role-tab:hover { border-color: var(--border2); color: var(--text); }
+.role-tab.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.role-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+.inp {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; margin-bottom: 12px;
+}
+.inp:focus { border-color: rgba(201,169,110,0.4); }
+.inp::placeholder { color: var(--muted); }
+.btn-gold {
+  width: 100%; background: var(--gold); border: none; border-radius: 12px;
+  padding: 14px; color: #09090c; font-family: 'Cinzel', serif;
+  font-size: 13px; font-weight: 700; letter-spacing: .15em; cursor: pointer; transition: opacity .2s;
+}
+.btn-gold:hover { opacity: .87; }
+.login-hint { font-size: 11px; color: var(--muted); margin-top: 16px; line-height: 1.7; }
+.login-hint strong { color: var(--gold); }
+.err { font-size: 12px; color: var(--red); margin-top: 10px; display: none; }
+
+/* ══ MAIN LAYOUT ══ */
+#app { display: none; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 220px;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; z-index: 100; padding: 24px 0;
+}
+.sb-logo { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 900; letter-spacing: .2em; padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.sb-logo span { color: var(--gold); }
+.sb-user { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.sb-user-role { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.sb-user-name { font-size: 14px; font-weight: 500; }
+.sb-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  font-size: 13px; color: var(--muted); transition: all .2s; border: none; background: none; width: 100%; text-align: left;
+}
+.sb-item:hover { background: var(--faint); color: var(--text); }
+.sb-item.active { background: var(--gold-dim); color: var(--gold); }
+.sb-item-icon { font-size: 16px; width: 20px; text-align: center; }
+.sb-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 100px; }
+.sb-footer { padding: 16px 12px; }
+.sb-logout { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13px; color: var(--muted); transition: all .2s; background: none; border: none; width: 100%; }
+.sb-logout:hover { color: var(--red); background: var(--red-dim); }
+
+/* Main content */
+.main { margin-left: 220px; padding: 32px; min-height: 100vh; }
+
+/* Page header */
+.page-hdr { margin-bottom: 28px; }
+.page-title { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--muted); }
+
+/* Stat cards */
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.stat-label { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.stat-val { font-family: 'Cinzel', serif; font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.stat-sub { font-size: 11px; color: var(--muted); }
+
+/* Section card */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+.card-title { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+
+/* ══ ARTIST FORM ══ */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+.form-group.full { grid-column: span 2; }
+.form-label { font-size: 11px; letter-spacing: .1em; color: var(--muted); }
+.form-inp {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+}
+.form-inp:focus { border-color: rgba(201,169,110,0.4); }
+.form-inp::placeholder { color: var(--muted); }
+select.form-inp { cursor: pointer; }
+.form-actions { display: flex; gap: 10px; margin-top: 6px; }
+.btn-primary {
+  background: var(--gold); border: none; border-radius: 10px; padding: 12px 24px;
+  color: #09090c; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: .12em; font-weight: 700;
+  cursor: pointer; transition: opacity .2s;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-ghost {
+  background: none; border: 1px solid var(--border2); border-radius: 10px; padding: 12px 24px;
+  color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all .2s;
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+
+/* Slot tags input */
+.slot-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.slot-tag {
+  background: var(--gold-dim); border: 1px solid rgba(201,169,110,0.3);
+  border-radius: 100px; padding: 4px 12px; font-size: 11px; color: var(--gold);
+  display: flex; align-items: center; gap: 6px;
+}
+.slot-tag button { background: none; border: none; color: var(--gold); cursor: pointer; font-size: 13px; padding: 0; line-height: 1; }
+
+/* ══ ARTIST TABLE ══ */
+.table { width: 100%; border-collapse: collapse; }
+.table th { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); padding: 0 16px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--faint); vertical-align: middle; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: rgba(255,255,255,0.015); }
+.artist-cell { display: flex; align-items: center; gap: 12px; }
+.mini-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
+.a-nm { font-weight: 500; font-size: 13px; }
+.a-sp { font-size: 11px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 10px; letter-spacing: .05em; font-weight: 500; }
+.pill-green { background: var(--green-dim); color: var(--green); }
+.pill-yellow { background: var(--yellow-dim); color: var(--yellow); }
+.pill-red { background: var(--red-dim); color: var(--red); }
+.action-btns { display: flex; gap: 6px; }
+.act-btn { background: none; border: 1px solid var(--border); border-radius: 7px; padding: 5px 12px; font-size: 11px; cursor: pointer; transition: all .2s; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+.act-btn:hover { border-color: var(--border2); color: var(--text); }
+.act-btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+/* ══ BOOKING CARDS ══ */
+.bookings-grid { display: grid; gap: 14px; }
+.booking-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px; transition: all .25s;
+  position: relative; overflow: hidden;
+}
+.booking-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+}
+.booking-card.pending::before { background: var(--yellow); }
+.booking-card.confirmed::before { background: var(--green); }
+.booking-card.rejected::before { background: var(--red); }
+
+.bk-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.bk-customer { font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+.bk-date { font-size: 12px; color: var(--muted); }
+.bk-meta { display: flex; gap: 20px; margin-bottom: 14px; flex-wrap: wrap; }
+.bk-meta-item { font-size: 12px; color: var(--muted); }
+.bk-meta-item strong { color: var(--text); font-weight: 400; }
+.bk-idea { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: rgba(232,228,220,0.65); line-height: 1.6; margin-bottom: 16px; font-style: italic; }
+.bk-actions { display: flex; gap: 8px; }
+.bk-confirm {
+  background: var(--green-dim); border: 1px solid rgba(76,175,120,0.3);
+  border-radius: 9px; padding: 9px 20px;
+  color: var(--green); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .2s;
+}
+.bk-confirm:hover { background: rgba(76,175,120,0.25); }
+.bk-reject {
+  background: var(--red-dim); border: 1px solid rgba(224,85,85,0.3);
+  border-radius: 9px; padding: 9px 20px;
+  color: var(--red); font-family: 'DM Sans', sans-serif; font-size: 12px;
+  cursor: pointer; transition: all .2s;
+}
+.bk-reject:hover { background: rgba(224,85,85,0.25); }
+.bk-done { font-size: 12px; color: var(--muted); padding: 9px 0; display: flex; align-items: center; gap: 6px; }
+
+/* Filter tabs */
+.filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.ftab { background: var(--surface2); border: 1px solid var(--border); border-radius: 100px; padding: 7px 16px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all .2s; }
+.ftab:hover { color: var(--text); }
+.ftab.on { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* Empty state */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-txt { font-size: 14px; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  padding: 11px 28px; border-radius: 100px; font-size: 13px;
+  z-index: 9999; opacity: 0; transition: opacity .3s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.green-t { background: #1a2e1a; border: 1px solid rgba(76,175,120,0.35); color: var(--green); }
+.toast.red-t   { background: #2e1a1a; border: 1px solid rgba(224,85,85,0.35); color: var(--red); }
+.toast.show { opacity: 1; }
+
+/* ══ ARTIST PROFILE PAGE ══ */
+.profile-header { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 28px; }
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 30px; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.profile-name { font-family: 'Cinzel', serif; font-size: 20px; margin-bottom: 4px; }
+.profile-spec { font-size: 13px; color: var(--gold); margin-bottom: 6px; }
+.profile-rate { font-size: 13px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .sidebar { width: 60px; }
+  .sb-item span, .sb-user, .sb-logo { display: none; }
+  .main { margin-left: 60px; padding: 20px; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: span 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">INK<span>FIND</span></div>
+    <div class="login-tagline">Staff & Artist Portal</div>
+
+    <div class="role-tabs">
+      <div class="role-tab active" id="tabAdmin" onclick="switchRole('admin')">
+        <span class="role-icon">🔧</span>
+        Admin
+      </div>
+      <div class="role-tab" id="tabArtist" onclick="switchRole('artist')">
+        <span class="role-icon">🎨</span>
+        Artist
+      </div>
+    </div>
+
+    <input class="inp" type="text" id="loginUser" placeholder="Username"/>
+    <input class="inp" type="password" id="loginPass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-gold" onclick="doLogin()">Sign In</button>
+    <div class="err" id="loginErr">Wrong credentials. Check the hints below.</div>
+    <div class="login-hint" id="loginHint">
+      Admin: <strong>admin / admin123</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-logo">INK<span>FIND</span></div>
+    <div class="sb-user">
+      <div class="sb-user-role" id="sbRole">Admin</div>
+      <div class="sb-user-name" id="sbName">Mishael</div>
+    </div>
+    <nav class="sb-nav" id="sbNav"></nav>
+    <div class="sb-footer">
+      <button class="sb-logout" onclick="logout()">↩ <span>Sign Out</span></button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="mainArea"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════ DATA STORE ══════════════════ */
+// In a real app this lives in Supabase — for now it's in memory
+let DB = {
+  artists: [
+    { id:1, name:"Arjun Mehta", studio:"Black Lotus Studio", specialty:"Blackwork & Geometric", rate:"₹3,500", password:"arjun123", color:"#1a1a2e", slots:["Mon 2pm","Wed 11am","Fri 3pm"], status:"active" },
+    { id:2, name:"Priya Nair",  studio:"Black Lotus Studio", specialty:"Fine Line & Botanical",  rate:"₹4,000", password:"priya123", color:"#2d1b1b", slots:["Tue 10am","Thu 2pm","Sat 12pm"], status:"active" },
+    { id:3, name:"Rohan Das",   studio:"Ink & Iron",          specialty:"Japanese Traditional",   rate:"₹5,000", password:"rohan123", color:"#0d1b0d", slots:["Mon 11am","Wed 3pm","Sat 10am"], status:"active" },
+  ],
+  bookings: [
+    { id:1, artistId:1, customer:"Riya Sharma",   slot:"Mon 2pm",  idea:"Small lotus on wrist, fine line", status:"pending",   bookedOn:"25 Mar 2026" },
+    { id:2, artistId:1, customer:"Vikram Nair",   slot:"Fri 3pm",  idea:"Geometric wolf, shoulder blade",  status:"pending",   bookedOn:"25 Mar 2026" },
+    { id:3, artistId:2, customer:"Aisha Khan",    slot:"Tue 10am", idea:"Botanical sleeve, wildflowers",   status:"confirmed", bookedOn:"24 Mar 2026" },
+    { id:4, artistId:3, customer:"Dev Patel",     slot:"Sat 10am", idea:"Koi fish, japanese style, forearm", status:"pending", bookedOn:"26 Mar 2026" },
+    { id:5, artistId:2, customer:"Sneha Reddy",   slot:"Thu 2pm",  idea:"Minimalist mountain, ankle",      status:"rejected",  bookedOn:"23 Mar 2026" },
+    { id:6, artistId:1, customer:"Mihir Bose",    slot:"Wed 11am", idea:"Sacred geometry mandala, chest",  status:"confirmed", bookedOn:"22 Mar 2026" },
+  ],
+  nextArtistId: 4,
+  nextBookingId: 7,
+};
+
+let SESSION = { role: null, artistId: null, name: null };
+let currentRole = 'admin';
+let slotBuffer = [];
+
+/* ══════════════════ LOGIN ══════════════════ */
+function switchRole(r) {
+  currentRole = r;
+  document.getElementById('tabAdmin').classList.toggle('active', r==='admin');
+  document.getElementById('tabArtist').classList.toggle('active', r==='artist');
+  const hint = document.getElementById('loginHint');
+  if (r === 'admin') {
+    hint.innerHTML = 'Admin: <strong>admin / admin123</strong>';
+  } else {
+    hint.innerHTML = 'Try: <strong>arjun / arjun123</strong> &nbsp;·&nbsp; <strong>priya / priya123</strong> &nbsp;·&nbsp; <strong>rohan / rohan123</strong>';
+  }
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+
+  if (currentRole === 'admin') {
+    if (u === 'admin' && p === 'admin123') {
+      SESSION = { role:'admin', name:'Mishael' };
+      startApp();
+    } else {
+      showErr();
+    }
+  } else {
+    const artist = DB.artists.find(a => a.name.toLowerCase().split(' ')[0] === u.toLowerCase() && a.password === p);
+    if (artist) {
+      SESSION = { role:'artist', artistId: artist.id, name: artist.name };
+      startApp();
+    } else {
+      showErr();
+    }
+  }
+}
+
+function showErr() {
+  document.getElementById('loginErr').style.display = 'block';
+  setTimeout(() => document.getElementById('loginErr').style.display = 'none', 3000);
+}
+
+function startApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('sbRole').textContent = SESSION.role === 'admin' ? 'Admin' : 'Artist';
+  document.getElementById('sbName').textContent = SESSION.name;
+  buildSidebar();
+  if (SESSION.role === 'admin') renderPage('overview');
+  else renderPage('my-bookings');
+}
+
+function logout() {
+  SESSION = { role:null, artistId:null, name:null };
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+/* ══════════════════ SIDEBAR ══════════════════ */
+function buildSidebar() {
+  const nav = document.getElementById('sbNav');
+  const items = SESSION.role === 'admin'
+    ? [
+        { id:'overview',       icon:'◈', label:'Overview' },
+        { id:'add-artist',     icon:'＋', label:'Add Artist' },
+        { id:'manage-artists', icon:'◎', label:'All Artists' },
+        { id:'all-bookings',   icon:'◆', label:'All Bookings' },
+      ]
+    : [
+        { id:'my-bookings',  icon:'◆', label:'My Bookings' },
+        { id:'my-profile',   icon:'◎', label:'My Profile' },
+      ];
+
+  nav.innerHTML = items.map(it => {
+    const pending = it.id === 'all-bookings' || it.id === 'my-bookings'
+      ? DB.bookings.filter(b => b.status === 'pending' && (SESSION.role==='admin' || b.artistId===SESSION.artistId)).length
+      : 0;
+    return `<button class="sb-item" id="nav-${it.id}" onclick="renderPage('${it.id}')">
+      <span class="sb-item-icon">${it.icon}</span>
+      <span>${it.label}</span>
+      ${pending > 0 ? `<span class="sb-badge">${pending}</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+function setActive(id) {
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-'+id)?.classList.add('active');
+}
+
+/* ══════════════════ PAGES ══════════════════ */
+function renderPage(page) {
+  setActive(page);
+  const main = document.getElementById('mainArea');
+
+  if (page === 'overview') renderOverview(main);
+  else if (page === 'add-artist') renderAddArtist(main);
+  else if (page === 'manage-artists') renderManageArtists(main);
+  else if (page === 'all-bookings') renderBookings(main, null);
+  else if (page === 'my-bookings') renderBookings(main, SESSION.artistId);
+  else if (page === 'my-profile') renderMyProfile(main);
+}
+
+/* ── OVERVIEW ── */
+function renderOverview(el) {
+  const total = DB.bookings.length;
+  const pending = DB.bookings.filter(b=>b.status==='pending').length;
+  const confirmed = DB.bookings.filter(b=>b.status==='confirmed').length;
+  const artists = DB.artists.length;
+
+  el.innerHTML = `
+    <div class="page-hdr">
+      <div class="page-title">Overview</div>
+      <div class="page-sub">Welcome back, ${SESSION.name}. Here's what's happening.</div>
+    </div>
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">Total Artists</div><div class="stat-val" style="color:var(--gold)">${artists}</div><div class="stat-sub">across all studios</div></div>
+      <div class="stat-card"><div class="stat-label">Total Bookings</div><div class="stat-val">${total}</div><div class="stat-sub">all time</div></div>
+      <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val" style="color:var(--yellow)">${pending}</div><div class="stat-sub">need attention</div></div>
+      <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val" style="color:var(--green)">${confirmed}</div><div class="stat-sub">booked in</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent Bookings <button class="act-btn" onclick="renderPage('all-bookings')">View All →</button></div>
+      ${recentBookingsTable()}
+    </div>`;
+}
+
+function recentBookingsTable() {
+  const recent = [...DB.bookings].reverse().slice(0,4);
+  return `<table class="table">
+    <thead><tr><th>Customer</th><th>Artist</th><th>Slot</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>${recent.map(b => {
+      const a = DB.artists.find(x=>x.id===b.artistId);
+      return `<tr>
+        <td>${b.customer}</td>
+        <td>${a?.name||'—'}</td>
+        <td>${b.slot}</td>
+        <td><span class="pill ${b.status==='confirmed'?'pill-green':b.status==='rejected'?'pill-red':'pill-yellow'}">${b.status}</span></td>
+        <td style="color:var(--muted)">${b.bookedOn}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+/* ── ADD ARTIST ── */
+function renderAddArtist(el) {
+  slotBuffer = [];
+  el.innerHTML = `
+    <div class="page-hdr">
+      <div class="page-title">Add New Artist</div>
+      <div class="page-sub">Fill in the details below. The artist will get a login to their own dashboard.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Artist Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input class="form-inp" id="f_name" placeholder="e.g. Kavitha Shetty"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Studio Name *</label>
+          <input class="form-inp" id="f_studio" placeholder="e.g. Black Lotus Studio"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Specialty *</label>
+          <input class="form-inp" id="f_spec" placeholder="e.g. Watercolour & Botanical"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hourly Rate *</label>
+          <input class="form-inp" id="f_rate" placeholder="e.g. ₹3,500"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Login Username (auto: first name)</label>
+          <input class="form-inp" id="f_user" placeholder="e.g. kavitha"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Login Password *</label>
+          <input class="form-inp" id="f_pass" type="password" placeholder="Set a password for the artist"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Profile Colour</label>
+          <input class="form-inp" id="f_color" type="color" value="#1a1a2e" style="height:42px;padding:4px 10px;cursor:pointer"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-inp" id="f_status">
+            <option value="active">Active — visible on platform</option>
+            <option value="inactive">Inactive — hidden from customers</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Available Slots (type a slot and press Enter)</label>
+          <input class="form-inp" id="f_slotInput" placeholder="e.g. Mon 2pm" onkeydown="addSlot(event)"/>
+          <div class="slot-tags" id="slotTags"></div>
+        </div>
+      </div>
+      <div class="form-actions" style="margin-top:20px">
+        <button class="btn-primary" onclick="saveArtist()">✓ Add Artist</button>
+        <button class="btn-ghost" onclick="clearForm()">Clear</button>
+      </div>
+    </div>`;
+}
+
+function addSlot(e) {
+  if (e.key !== 'Enter') return;
+  const v = document.getElementById('f_slotInput').value.trim();
+  if (!v) return;
+  slotBuffer.push(v);
+  document.getElementById('f_slotInput').value = '';
+  renderSlotTags();
+}
+
+function removeSlot(i) {
+  slotBuffer.splice(i,1);
+  renderSlotTags();
+}
+
+function renderSlotTags() {
+  document.getElementById('slotTags').innerHTML = slotBuffer.map((s,i) =>
+    `<div class="slot-tag">${s}<button onclick="removeSlot(${i})">×</button></div>`
+  ).join('');
+}
+
+function clearForm() {
+  ['f_name','f_studio','f_spec','f_rate','f_user','f_pass','f_slotInput'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  slotBuffer = [];
+  renderSlotTags();
+}
+
+function saveArtist() {
+  const name  = document.getElementById('f_name').value.trim();
+  const studio= document.getElementById('f_studio').value.trim();
+  const spec  = document.getElementById('f_spec').value.trim();
+  const rate  = document.getElementById('f_rate').value.trim();
+  const pass  = document.getElementById('f_pass').value.trim();
+  const color = document.getElementById('f_color').value;
+  const status= document.getElementById('f_status').value;
+
+  if (!name||!studio||!spec||!rate||!pass) {
+    showToast('Please fill all required fields.','red-t'); return;
+  }
+
+  const newArtist = {
+    id: DB.nextArtistId++,
+    name, studio, specialty: spec, rate, password: pass,
+    color, status,
+    slots: [...slotBuffer],
+  };
+  DB.artists.push(newArtist);
+  buildSidebar();
+  showToast(`✓ ${name} added successfully!`, 'green-t');
+  renderPage('manage-artists');
+}
+
+/* ── MANAGE ARTISTS ── */
+function renderManageArtists(el) {
+  el.innerHTML = `
+    <div class="page-hdr">
+      <div class="page-title">All Artists</div>
+      <div class="page-sub">${DB.artists.length} artist${DB.artists.length!==1?'s':''} on the platform</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="table">
+        <thead><tr><th>Artist</th><th>Studio</th><th>Rate</th><th>Slots</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="artistTbody"></tbody>
+      </table>
+    </div>`;
+  renderArtistRows();
+}
+
+function renderArtistRows() {
+  document.getElementById('artistTbody').innerHTML = DB.artists.map(a => `
+    <tr>
+      <td>
+        <div class="artist-cell">
+          <div class="mini-avatar" style="background:${a.color}">${a.name[0]}</div>
+          <div><div class="a-nm">${a.name}</div><div class="a-sp">${a.specialty}</div></div>
+        </div>
+      </td>
+      <td style="color:var(--muted);font-size:12px">${a.studio}</td>
+      <td>${a.rate}/hr</td>
+      <td style="font-size:11px;color:var(--muted)">${a.slots.join(', ')||'—'}</td>
+      <td><span class="pill ${a.status==='active'?'pill-green':'pill-yellow'}">${a.status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="act-btn" onclick="toggleStatus(${a.id})">${a.status==='active'?'Deactivate':'Activate'}</button>
+          <button class="act-btn danger" onclick="deleteArtist(${a.id})">Remove</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function toggleStatus(id) {
+  const a = DB.artists.find(x=>x.id===id);
+  a.status = a.status==='active'?'inactive':'active';
+  renderArtistRows();
+  showToast(`${a.name} is now ${a.status}.`, 'green-t');
+}
+
+function deleteArtist(id) {
+  const a = DB.artists.find(x=>x.id===id);
+  if (!confirm(`Remove ${a.name}? This cannot be undone.`)) return;
+  DB.artists = DB.artists.filter(x=>x.id!==id);
+  DB.bookings = DB.bookings.filter(b=>b.artistId!==id);
+  renderArtistRows();
+  buildSidebar();
+  showToast(`${a.name} removed.`, 'red-t');
+}
+
+/* ── BOOKINGS ── */
+let bkFilter = 'all';
+
+function renderBookings(el, artistId) {
+  const isArtist = SESSION.role === 'artist';
+  const title = isArtist ? 'My Bookings' : 'All Bookings';
+  const sub   = isArtist ? 'Customers who want to book with you.' : 'Every booking across all artists.';
+
+  el.innerHTML = `
+    <div class="page-hdr">
+      <div class="page-title">${title}</div>
+      <div class="page-sub">${sub}</div>
+    </div>
+    <div class="filter-tabs">
+      ${['all','pending','confirmed','rejected'].map(f =>
+        `<button class="ftab${bkFilter===f?' on':''}" onclick="setBkFilter('${f}','${artistId||''}')">${f.charAt(0).toUpperCase()+f.slice(1)}</button>`
+      ).join('')}
+    </div>
+    <div class="bookings-grid" id="bookingsGrid"></div>`;
+
+  renderBookingCards(artistId);
+}
+
+function setBkFilter(f, aid) {
+  bkFilter = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.toggle('on', t.textContent.toLowerCase()===f));
+  renderBookingCards(aid ? parseInt(aid) : null);
+}
+
+function renderBookingCards(artistId) {
+  let list = artistId ? DB.bookings.filter(b=>b.artistId===artistId) : DB.bookings;
+  if (bkFilter !== 'all') list = list.filter(b=>b.status===bkFilter);
+
+  const grid = document.getElementById('bookingsGrid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">◎</div><div class="empty-txt">No ${bkFilter==='all'?'':bkFilter+' '}bookings found.</div></div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(b => {
+    const artist = DB.artists.find(x=>x.id===b.artistId);
+    const canAct = b.status === 'pending';
+    return `
+      <div class="booking-card ${b.status}" id="bk-${b.id}">
+        <div class="bk-top">
+          <div>
+            <div class="bk-customer">${b.customer}</div>
+            <div class="bk-date">Booked on ${b.bookedOn}</div>
+          </div>
+          <span class="pill ${b.status==='confirmed'?'pill-green':b.status==='rejected'?'pill-red':'pill-yellow'}">${b.status}</span>
+        </div>
+        <div class="bk-meta">
+          ${SESSION.role==='admin'?`<div class="bk-meta-item">Artist: <strong>${artist?.name||'—'}</strong></div>`:''}
+          <div class="bk-meta-item">Slot: <strong>${b.slot}</strong></div>
+          <div class="bk-meta-item">Studio: <strong>${artist?.studio||'—'}</strong></div>
+        </div>
+        ${b.idea ? `<div class="bk-idea">"${b.idea}"</div>` : ''}
+        <div class="bk-actions">
+          ${canAct
+            ? `<button class="bk-confirm" onclick="updateBooking(${b.id},'confirmed',${artistId||null})">✓ Confirm</button>
+               <button class="bk-reject"  onclick="updateBooking(${b.id},'rejected',${artistId||null})">✕ Reject</button>`
+            : `<div class="bk-done">${b.status==='confirmed'?'✓ Confirmed':'✕ Rejected'}</div>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updateBooking(id, status, artistId) {
+  const b = DB.bookings.find(x=>x.id===id);
+  b.status = status;
+  buildSidebar();
+  renderBookingCards(artistId);
+  showToast(status==='confirmed' ? '✓ Booking confirmed!' : '✕ Booking rejected.', status==='confirmed'?'green-t':'red-t');
+}
+
+/* ── MY PROFILE (artist) ── */
+function renderMyProfile(el) {
+  const a = DB.artists.find(x=>x.id===SESSION.artistId);
+  const myBookings = DB.bookings.filter(b=>b.artistId===a.id);
+  el.innerHTML = `
+    <div class="page-hdr">
+      <div class="page-title">My Profile</div>
+      <div class="page-sub">How customers see you on the platform.</div>
+    </div>
+    <div class="card">
+      <div class="profile-header">
+        <div class="profile-avatar" style="background:${a.color}">${a.name[0]}</div>
+        <div>
+          <div class="profile-name">${a.name}</div>
+          <div class="profile-spec">${a.specialty}</div>
+          <div class="profile-rate">${a.rate}/hr &nbsp;·&nbsp; ${a.studio}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div class="stat-card"><div class="stat-label">Total Bookings</div><div class="stat-val">${myBookings.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val" style="color:var(--green)">${myBookings.filter(b=>b.status==='confirmed').length}</div></div>
+        <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-val" style="color:var(--yellow)">${myBookings.filter(b=>b.status==='pending').length}</div></div>
+      </div>
+      <div class="form-label" style="font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:.1em;text-transform:uppercase">Your Available Slots</div>
+      <div class="slot-tags">${a.slots.map(s=>`<div class="slot-tag">${s}</div>`).join('')||'<span style="color:var(--muted);font-size:13px">No slots set. Ask your admin to add some.</span>'}</div>
+    </div>`;
+}
+
+/* ══════════════════ UTILS ══════════════════ */
+function showToast(msg, type='green-t') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
