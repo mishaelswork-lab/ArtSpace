@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>INKFIND — Bengaluru</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:wght@700;900&family=Syne:wght@700;800&family=Space+Mono&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#09090c; --surface:#111116; --s2:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+  --gold:#c9a96e; --gold-bg:rgba(201,169,110,0.1);
+  --text:#e8e4dc; --muted:rgba(232,228,220,0.42); --faint:rgba(232,228,220,0.07);
+  --green:#4caf78; --logo-font:'Cinzel',serif;
+}
+html { scroll-behavior:smooth; }
+body { min-height:100vh; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-weight:300; overflow-x:hidden; }
+
+/* LOGIN */
+#loginScreen { position:fixed; inset:0; z-index:9000; background:#07070a; display:flex; align-items:center; justify-content:center; padding:20px; }
+.login-box { width:100%; max-width:360px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:40px 32px; text-align:center; }
+.login-logo { font-family:'Cinzel',serif; font-size:26px; font-weight:900; letter-spacing:.25em; margin-bottom:6px; }
+.login-logo span { color:var(--gold); }
+.login-sub { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:32px; }
+.l-inp { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:12px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; outline:none; margin-bottom:12px; }
+.l-inp:focus { border-color:rgba(201,169,110,0.45); }
+.l-inp::placeholder { color:var(--muted); }
+.l-btn { width:100%; background:var(--gold); border:none; border-radius:10px; padding:13px; color:#07070a; font-family:'Cinzel',serif; font-size:13px; font-weight:700; letter-spacing:.15em; cursor:pointer; transition:opacity .2s; }
+.l-btn:hover { opacity:.86; }
+.l-err { font-size:12px; color:#e05555; margin-top:10px; display:none; }
+.l-skip { margin-top:18px; font-size:12px; color:var(--muted); cursor:pointer; }
+.l-skip span { color:rgba(201,169,110,0.7); }
+.l-skip span:hover { color:var(--gold); }
+
+/* NAV */
+nav { position:sticky; top:0; z-index:500; height:56px; background:rgba(9,9,12,0.94); backdrop-filter:blur(18px); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+.logo { font-family:var(--logo-font); font-size:17px; font-weight:900; letter-spacing:.2em; transition:font-family .3s; }
+.logo span { color:var(--gold); }
+.nav-right { display:flex; align-items:center; gap:10px; }
+.nav-city { font-size:11px; color:var(--muted); letter-spacing:.15em; text-transform:uppercase; }
+.nav-back { background:none; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; display:none; align-items:center; gap:5px; }
+.nav-back:hover { color:var(--text); }
+.admin-btn { background:var(--gold-bg); border:1px solid rgba(201,169,110,0.22); border-radius:8px; padding:6px 12px; color:var(--gold); font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s; display:none; }
+.admin-btn:hover { background:rgba(201,169,110,0.18); }
+
+/* VIEWS */
+.view { display:none; }
+.view.active { display:block; }
+
+/* HERO */
+.hero { padding:56px 24px 44px; text-align:center; position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% -10%,rgba(201,169,110,0.09) 0%,transparent 65%); pointer-events:none; }
+.hero-eyebrow { font-size:10px; letter-spacing:.35em; text-transform:uppercase; color:var(--gold); margin-bottom:18px; }
+.hero-title { font-family:'Cinzel',serif; font-size:clamp(34px,9vw,62px); font-weight:900; line-height:1.0; margin-bottom:14px; }
+.hero-title em { font-style:normal; color:var(--gold); }
+.hero-sub { font-size:14px; color:var(--muted); max-width:380px; margin:0 auto 36px; line-height:1.65; }
+
+/* LOCATION BANNER */
+.loc-banner { display:flex; align-items:center; justify-content:center; gap:10px; border-radius:100px; padding:10px 20px; font-size:12px; max-width:360px; margin:0 auto 40px; cursor:pointer; transition:all .2s; border:1px solid; }
+.loc-banner.idle    { color:var(--muted);  border-color:var(--border);              background:var(--faint); }
+.loc-banner.loading { color:var(--muted);  border-color:var(--border);              background:var(--faint); cursor:default; }
+.loc-banner.found   { color:var(--green);  border-color:rgba(76,175,120,0.25);      background:rgba(76,175,120,0.08); cursor:default; }
+.loc-banner.error   { color:#e05555;       border-color:rgba(224,85,85,0.25);       background:rgba(224,85,85,0.07); }
+.loc-dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.loc-dot.pulse { animation:lp 1.6s infinite; }
+@keyframes lp { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(0.6)} }
+
+/* AI BOX */
+.ai-box { background:rgba(255,255,255,0.02); border:1px solid rgba(201,169,110,0.16); border-radius:16px; padding:18px; max-width:540px; margin:0 auto 56px; }
+.ai-label { font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); margin-bottom:11px; }
+.ai-row { display:flex; gap:8px; }
+.ai-input { flex:1; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.1); border-radius:9px; padding:10px 14px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; }
+.ai-input:focus { border-color:rgba(201,169,110,.35); }
+.ai-input::placeholder { color:var(--muted); }
+.ai-ask { background:var(--gold); border:none; border-radius:9px; padding:10px 18px; color:#09090c; font-family:'Cinzel',serif; font-size:11px; letter-spacing:.1em; cursor:pointer; transition:opacity .2s; white-space:nowrap; }
+.ai-ask:hover { opacity:.85; }
+.ai-ask:disabled { opacity:.35; cursor:default; }
+.ai-out { margin-top:12px; font-size:13px; color:rgba(232,228,220,.65); line-height:1.7; border-top:1px solid rgba(255,255,255,.06); padding-top:12px; display:none; }
+.dots { display:none; gap:4px; align-items:center; margin-top:10px; }
+.dot { width:5px; height:5px; border-radius:50%; background:var(--gold); animation:dp 1.2s infinite; }
+.dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* STUDIOS LIST */
+.studios-section { max-width:680px; margin:0 auto; padding:0 20px 80px; }
+.section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.section-label { font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--muted); }
+.sort-note { font-size:11px; color:var(--green); display:none; }
+.search-wrap { position:relative; margin-bottom:14px; }
+.search-ico { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:15px; pointer-events:none; }
+.search-inp { width:100%; background:var(--s2); border:1px solid var(--border); border-radius:11px; padding:11px 16px 11px 40px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; }
+.search-inp:focus { border-color:rgba(201,169,110,.35); }
+.search-inp::placeholder { color:var(--muted); }
+.chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:22px; }
+.chip { background:var(--s2); border:1px solid var(--border); border-radius:100px; padding:6px 14px; font-size:11px; color:var(--muted); cursor:pointer; transition:all .2s; white-space:nowrap; }
+.chip:hover { color:var(--text); border-color:var(--border2); }
+.chip.on { background:var(--gold-bg); border-color:var(--gold); color:var(--gold); }
+
+/* STUDIO CARD */
+.studio-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; margin-bottom:14px; cursor:pointer; transition:all .28s; overflow:hidden; }
+.studio-card:hover { border-color:rgba(255,255,255,.16); transform:translateY(-2px); box-shadow:0 12px 40px rgba(0,0,0,.4); }
+.card-cover { height:90px; display:flex; align-items:flex-end; justify-content:space-between; padding:12px 16px; }
+.dist-chip { background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.13); border-radius:100px; padding:4px 12px; font-size:11px; color:rgba(255,255,255,.8); letter-spacing:.05em; display:flex; align-items:center; gap:6px; }
+.nearest-badge { background:rgba(76,175,120,0.2); border:1px solid rgba(76,175,120,0.4); border-radius:100px; padding:4px 12px; font-size:10px; color:var(--green); letter-spacing:.08em; }
+.card-body { padding:16px 18px 18px; }
+.card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px; }
+.card-name { font-family:var(--logo-font); font-size:16px; font-weight:600; }
+.card-rating { font-size:12px; color:var(--gold); }
+.card-loc { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.card-tags { display:flex; gap:6px; flex-wrap:wrap; }
+.tag { font-size:10px; border:1px solid var(--border); border-radius:100px; padding:3px 11px; color:var(--muted); }
+
+/* DETAIL VIEWS */
+.detail-wrap { max-width:680px; margin:0 auto; padding:28px 20px 80px; }
+.detail-cover { height:160px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:48px; margin-bottom:22px; border:1px solid rgba(255,255,255,.06); }
+.detail-title { font-family:'Cinzel',serif; font-size:24px; margin-bottom:6px; }
+.detail-meta { font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:14px; margin-bottom:28px; }
+.artist-grid { display:grid; gap:12px; }
+.artist-card { background:var(--s2); border:1px solid var(--border); border-radius:14px; padding:18px; display:flex; gap:16px; cursor:pointer; transition:all .2s; }
+.artist-card:hover { border-color:rgba(201,169,110,.3); background:rgba(255,255,255,.04); }
+.avatar { width:56px; height:56px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Cinzel',serif; font-size:20px; border:1px solid rgba(255,255,255,.1); }
+.a-name { font-family:'Cinzel',serif; font-size:14px; margin-bottom:3px; }
+.a-spec { font-size:11px; color:var(--gold); margin-bottom:7px; }
+.a-bio { font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:11px; }
+.a-foot { display:flex; justify-content:space-between; align-items:center; }
+.a-rate { font-size:13px; }
+.btn-sm { background:none; border:1px solid rgba(201,169,110,.35); border-radius:8px; padding:7px 16px; color:var(--gold); font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+.btn-sm:hover { background:var(--gold-bg); }
+.port-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:24px; }
+.port-tile { aspect-ratio:1; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px; border:1px solid rgba(255,255,255,.05); }
+.slots-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:22px; }
+.slot-btn { border:1px solid var(--border); border-radius:10px; padding:11px 6px; background:var(--s2); color:var(--muted); font-size:12px; text-align:center; cursor:pointer; transition:all .2s; }
+.slot-btn:hover { border-color:rgba(201,169,110,.3); color:var(--text); }
+.slot-btn.on { background:var(--gold-bg); border-color:var(--gold); color:var(--gold); }
+.f-label { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:8px; }
+textarea { width:100%; background:var(--s2); border:1px solid var(--border); border-radius:11px; padding:13px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; resize:none; outline:none; line-height:1.6; margin-bottom:22px; }
+textarea:focus { border-color:rgba(201,169,110,.3); }
+.btn-primary { width:100%; background:var(--gold); border:none; border-radius:12px; padding:15px; color:#09090c; font-family:var(--logo-font); font-size:13px; letter-spacing:.15em; font-weight:700; cursor:pointer; transition:opacity .2s; }
+.btn-primary:disabled { opacity:.28; cursor:default; }
+.btn-primary:not(:disabled):hover { opacity:.87; }
+.confirm-wrap { max-width:440px; margin:0 auto; padding:60px 20px 80px; text-align:center; }
+.confirm-icon { width:76px; height:76px; border:1px solid rgba(201,169,110,.3); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; margin:0 auto 22px; }
+.confirm-title { font-family:'Cinzel',serif; font-size:26px; margin-bottom:10px; }
+.confirm-sub { font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:28px; }
+.confirm-card { background:var(--s2); border:1px solid var(--border); border-radius:16px; padding:18px; text-align:left; margin-bottom:28px; }
+.c-row { display:flex; justify-content:space-between; font-size:13px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.c-row:last-child { border:none; }
+.c-label { color:var(--muted); }
+
+/* ADMIN DRAWER */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:700; display:none; }
+.overlay.show { display:block; }
+#adminDrawer { position:fixed; top:0; right:-420px; bottom:0; width:400px; z-index:800; background:#0d0d11; border-left:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; transition:right .38s cubic-bezier(.4,0,.2,1); }
+#adminDrawer.open { right:0; }
+.adm-hdr { padding:20px; border-bottom:1px solid rgba(255,255,255,.07); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.adm-title { font-family:'Cinzel',serif; font-size:14px; letter-spacing:.12em; color:var(--gold); }
+.adm-close { background:none; border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:6px 12px; color:var(--muted); font-size:12px; cursor:pointer; }
+.adm-body { flex:1; overflow-y:auto; padding:22px; }
+.adm-body::-webkit-scrollbar { width:3px; }
+.adm-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:2px; }
+.adm-sec { margin-bottom:26px; }
+.adm-sec-title { font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.25); margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.05); }
+.adm-field { margin-bottom:13px; }
+.adm-field label { display:block; font-size:11px; letter-spacing:.1em; color:var(--muted); margin-bottom:6px; }
+.adm-inp { width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:9px; padding:10px 13px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; }
+.adm-inp:focus { border-color:rgba(201,169,110,.4); }
+.color-row { display:flex; align-items:center; gap:10px; }
+.swatch { width:36px; height:36px; border-radius:8px; border:1px solid rgba(255,255,255,.15); overflow:hidden; cursor:pointer; padding:0; flex-shrink:0; }
+.swatch input[type=color] { width:200%; height:200%; margin:-50%; border:none; cursor:pointer; }
+.font-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.font-btn { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:10px; color:var(--muted); font-size:13px; cursor:pointer; transition:all .2s; text-align:center; }
+.font-btn:hover { color:var(--text); }
+.font-btn.on { border-color:var(--gold); background:var(--gold-bg); color:var(--gold); }
+.preview-box { background:#111115; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+.prev-logo { font-size:19px; font-weight:900; letter-spacing:.2em; }
+.prev-btn { border-radius:8px; padding:8px 16px; border:none; font-size:12px; font-weight:700; letter-spacing:.1em; cursor:default; }
+.adm-apply { width:100%; background:var(--gold); border:none; border-radius:10px; padding:13px; color:#09090c; font-family:'Cinzel',serif; font-size:12px; font-weight:700; letter-spacing:.15em; cursor:pointer; transition:opacity .2s; margin-top:6px; }
+.adm-apply:hover { opacity:.85; }
+.adm-apply.ghost { background:none; border:1px solid rgba(255,255,255,.14); color:var(--muted); margin-top:8px; }
+.adm-apply.ghost:hover { opacity:1; color:var(--text); }
+
+/* TOAST */
+.toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); padding:11px 26px; border-radius:100px; font-size:13px; z-index:9999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; background:#152215; border:1px solid rgba(76,175,120,.3); color:var(--green); }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">INK<span>FIND</span></div>
+    <div class="login-sub">Admin Access</div>
+    <input class="l-inp" type="password" id="pwIn" placeholder="Admin password" onkeydown="if(event.key==='Enter')tryLogin()"/>
+    <button class="l-btn" onclick="tryLogin()">Enter Admin Panel</button>
+    <div class="l-err" id="lErr">Wrong password — try: admin123</div>
+    <div class="l-skip" onclick="skipLogin()">Just browsing? <span>View app →</span></div>
+  </div>
+</div>
+
+<!-- OVERLAY + ADMIN DRAWER -->
+<div class="overlay" id="overlay" onclick="closeAdmin()"></div>
+<div id="adminDrawer">
+  <div class="adm-hdr">
+    <div class="adm-title">⚙ Brand Settings</div>
+    <button class="adm-close" onclick="closeAdmin()">✕ Close</button>
+  </div>
+  <div class="adm-body">
+    <div class="adm-sec">
+      <div class="adm-sec-title">Live Preview</div>
+      <div class="preview-box">
+        <div class="prev-logo" id="prevLogo">INK<span id="prevSpan" style="color:#c9a96e">FIND</span></div>
+        <button class="prev-btn" id="prevBtn" style="background:#c9a96e;color:#09090c;font-family:'Cinzel',serif">Book Now</button>
+      </div>
+    </div>
+    <div class="adm-sec">
+      <div class="adm-sec-title">Logo & Name</div>
+      <div class="adm-field"><label>First Word</label><input class="adm-inp" id="aLogoA" value="INK" oninput="livePreview()"/></div>
+      <div class="adm-field"><label>Second Word (shown in accent colour)</label><input class="adm-inp" id="aLogoB" value="FIND" oninput="livePreview()"/></div>
+      <div class="adm-field"><label>City Label</label><input class="adm-inp" id="aCity" value="BLR" oninput="livePreview()"/></div>
+    </div>
+    <div class="adm-sec">
+      <div class="adm-sec-title">Colours</div>
+      <div class="adm-field">
+        <label>Accent / Brand Colour</label>
+        <div class="color-row">
+          <div class="swatch" id="swG" style="background:#c9a96e"><input type="color" value="#c9a96e" id="cGold" oninput="syncSwatch('cGold','swG','cGoldHex');livePreview()"/></div>
+          <input class="adm-inp" id="cGoldHex" value="#c9a96e" style="flex:1" oninput="syncHex('cGold','cGoldHex','swG')"/>
+        </div>
+      </div>
+      <div class="adm-field">
+        <label>Background</label>
+        <div class="color-row">
+          <div class="swatch" id="swB" style="background:#09090c"><input type="color" value="#09090c" id="cBg" oninput="syncSwatch('cBg','swB','cBgHex');livePreview()"/></div>
+          <input class="adm-inp" id="cBgHex" value="#09090c" style="flex:1" oninput="syncHex('cBg','cBgHex','swB')"/>
+        </div>
+      </div>
+    </div>
+    <div class="adm-sec">
+      <div class="adm-sec-title">Logo Font</div>
+      <div class="font-grid" id="fontGrid">
+        <button class="font-btn on" style="font-family:'Cinzel',serif"              onclick="pickFont('Cinzel, serif',this)">Cinzel</button>
+        <button class="font-btn"    style="font-family:'Playfair Display',serif"    onclick="pickFont('Playfair Display, serif',this)">Playfair</button>
+        <button class="font-btn"    style="font-family:'Syne',sans-serif"           onclick="pickFont('Syne, sans-serif',this)">Syne</button>
+        <button class="font-btn"    style="font-family:'Space Mono',monospace"      onclick="pickFont('Space Mono, monospace',this)">Mono</button>
+        <button class="font-btn"    style="font-family:'Cormorant Garamond',serif"  onclick="pickFont('Cormorant Garamond, serif',this)">Cormorant</button>
+        <button class="font-btn"    style="font-family:'DM Sans',sans-serif"        onclick="pickFont('DM Sans, sans-serif',this)">DM Sans</button>
+      </div>
+    </div>
+    <div class="adm-sec">
+      <button class="adm-apply" onclick="applyBrand()">✓ Apply to App</button>
+      <button class="adm-apply ghost" onclick="resetBrand()">↺ Reset Defaults</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav" style="display:none">
+  <button class="nav-back" id="navBack" onclick="goBack()">← Back</button>
+  <div class="logo" id="appLogo">INK<span id="appLogoSpan">FIND</span></div>
+  <div class="nav-right">
+    <div class="nav-city" id="appCity">BLR</div>
+    <button class="admin-btn" id="adminBtn" onclick="openAdmin()">⚙ Admin</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div class="view active" id="homeView">
+  <div class="hero">
+    <div class="hero-eyebrow">Bengaluru's Tattoo Network</div>
+    <h1 class="hero-title">Find Your<br/><em>Perfect Artist</em></h1>
+    <p class="hero-sub">Discover studios near you, browse portfolios, and book consultations — all in one place.</p>
+
+    <div class="loc-banner idle" id="locBanner" onclick="requestLocation()">
+      <div class="loc-dot" id="locDot"></div>
+      <span id="locText">📍 Tap to find studios near you</span>
+    </div>
+
+    <div class="ai-box">
+      <div class="ai-label">✦ &nbsp;AI Style Consultant</div>
+      <div class="ai-row">
+        <input class="ai-input" id="aiIn" placeholder="Describe your tattoo idea…" onkeydown="if(event.key==='Enter')askAI()"/>
+        <button class="ai-ask" id="aiBtn" onclick="askAI()">Ask</button>
+      </div>
+      <div class="dots" id="aiDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div class="ai-out" id="aiOut"></div>
+    </div>
+  </div>
+
+  <div class="studios-section">
+    <div class="search-wrap">
+      <span class="search-ico">⌕</span>
+      <input class="search-inp" id="searchIn" placeholder="Search studios or styles…" oninput="renderStudios()"/>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="section-hdr">
+      <div class="section-label">Studios</div>
+      <div class="sort-note" id="sortNote">📍 Sorted by distance</div>
+    </div>
+    <div id="studioList"></div>
+  </div>
+</div>
+
+<!-- PARLOUR -->
+<div class="view" id="parlourView"><div class="detail-wrap" id="parlourWrap"></div></div>
+
+<!-- ARTIST -->
+<div class="view" id="artistView"><div class="detail-wrap" id="artistWrap"></div></div>
+
+<!-- CONFIRM -->
+<div class="view" id="confirmView"><div class="confirm-wrap" id="confirmWrap"></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── DATA ── */
+const STUDIOS = [
+  { id:1, name:"Black Lotus Studio", area:"Indiranagar", lat:12.9784, lng:77.6408, rating:4.9, reviews:214, styles:["Blackwork","Fine Line","Geometric"], cover:["#1a1a2e","#2d1b4e"],
+    artists:[
+      { id:1, name:"Arjun Mehta", spec:"Blackwork & Geometric", rate:"₹3,500/hr", bio:"10 years crafting bold blackwork. Influenced by sacred geometry and South Indian temple art.", slots:["Mon 2pm","Wed 11am","Fri 3pm"], colors:["#1a1a2e","#2d2d44","#3d3d5c"], icons:["◆","△","◉","✦","◆","△"] },
+      { id:2, name:"Priya Nair",  spec:"Fine Line & Botanical",  rate:"₹4,000/hr", bio:"Delicate fine-line work inspired by Indian flora. Trained in Seoul and Mumbai.",              slots:["Tue 10am","Thu 2pm","Sat 12pm"], colors:["#2d1b1b","#4a2828","#6b3b3b"], icons:["❧","━","◌","❧","━","◌"] },
+    ]},
+  { id:2, name:"Ink & Iron",       area:"Koramangala", lat:12.9352, lng:77.6245, rating:4.7, reviews:189, styles:["Japanese","Neo-Traditional","Realism"], cover:["#0d1b0d","#1a3320"],
+    artists:[
+      { id:3, name:"Rohan Das",   spec:"Japanese Traditional",   rate:"₹5,000/hr", bio:"Apprenticed under a master in Kyoto. Brings Japanese storytelling to every piece.",           slots:["Mon 11am","Wed 3pm","Sat 10am"], colors:["#0d1b0d","#1a3320","#254d2e"], icons:["⛩","✦","◉","⛩","✦","◉"] },
+    ]},
+  { id:3, name:"Chromatic Skin",   area:"Jayanagar",   lat:12.9250, lng:77.5938, rating:4.8, reviews:302, styles:["Watercolour","Illustrative","Surrealism"], cover:["#1a0a2e","#2d1a4a"],
+    artists:[
+      { id:4, name:"Sneha Rao",   spec:"Watercolour & Surrealism",rate:"₹4,500/hr", bio:"Fine arts background. Creates dreamlike compositions that blur skin and canvas.",              slots:["Tue 1pm","Thu 11am","Fri 4pm"], colors:["#1a0a2e","#2d1a4a","#3f2566"], icons:["◌","✿","◎","◌","✿","◎"] },
+    ]},
+  { id:4, name:"Needle & Thread",  area:"HSR Layout",  lat:12.9116, lng:77.6389, rating:4.6, reviews:97,  styles:["Minimalist","Script","Dotwork"], cover:["#1a1a14","#2d2d1f"],
+    artists:[
+      { id:5, name:"Kavitha Shetty",spec:"Minimalist & Script",  rate:"₹2,800/hr", bio:"Clean lines, intentional space. Every tattoo says exactly what it needs to — nothing more.", slots:["Mon 3pm","Thu 12pm","Sat 2pm"], colors:["#1a1a14","#2d2d1f","#3f3f2a"], icons:["━","◌","·","━","◌","·"] },
+    ]},
+  { id:5, name:"Sacred Skin",      area:"Whitefield",  lat:12.9698, lng:77.7499, rating:4.8, reviews:156, styles:["Mandala","Spiritual","Ornamental"], cover:["#1a0d00","#2d1a00"],
+    artists:[
+      { id:6, name:"Dev Krishnan", spec:"Mandala & Ornamental",  rate:"₹4,200/hr", bio:"Deeply rooted in South Asian spiritual art. Each mandala is a meditation made permanent.",   slots:["Wed 10am","Fri 1pm","Sat 11am"], colors:["#1a0d00","#2d1a00","#4a2e00"], icons:["◎","✦","◆","◎","✦","◆"] },
+    ]},
+];
+const ALL_STYLES = [...new Set(STUDIOS.flatMap(s=>s.styles))];
+let ST = { userLat:null, userLng:null, studio:null, artist:null, slot:null, filter:null, view:'home', isAdmin:false, pendingFont:'Cinzel, serif' };
+
+/* ── LOCATION ── */
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function distLabel(s){
+  if(ST.userLat===null)return null;
+  const d=haversine(ST.userLat,ST.userLng,s.lat,s.lng);
+  return d<1?`${Math.round(d*1000)} m`:`${d.toFixed(1)} km`;
+}
+function requestLocation(){
+  const banner=document.getElementById('locBanner');
+  const txt=document.getElementById('locText');
+  const dot=document.getElementById('locDot');
+  banner.className='loc-banner loading';
+  txt.textContent='Finding your location…';
+  dot.classList.add('pulse');
+  if(!navigator.geolocation){ banner.className='loc-banner error'; txt.textContent='Location not supported on this browser'; dot.classList.remove('pulse'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      ST.userLat=pos.coords.latitude; ST.userLng=pos.coords.longitude;
+      banner.className='loc-banner found';
+      txt.textContent='Studios sorted by distance from you';
+      dot.classList.remove('pulse');
+      document.getElementById('sortNote').style.display='block';
+      renderStudios();
+    },
+    err=>{
+      banner.className='loc-banner error';
+      txt.textContent=err.code===1?'Location denied — tap to try again':'Could not get location — tap to retry';
+      dot.classList.remove('pulse');
+    },
+    {timeout:8000}
+  );
+}
+
+/* ── HOME ── */
+function buildHome(){
+  const c=document.getElementById('chips');
+  c.innerHTML=`<button class="chip on" onclick="setFilter('all',this)">All</button>`;
+  ALL_STYLES.forEach(s=>{ c.innerHTML+=`<button class="chip" onclick="setFilter('${s}',this)">${s}</button>`; });
+  renderStudios();
+}
+function getSorted(){
+  let list=[...STUDIOS];
+  const q=document.getElementById('searchIn').value.toLowerCase();
+  if(ST.filter) list=list.filter(s=>s.styles.includes(ST.filter));
+  if(q) list=list.filter(s=>s.name.toLowerCase().includes(q)||s.area.toLowerCase().includes(q)||s.styles.some(t=>t.toLowerCase().includes(q)));
+  if(ST.userLat!==null) list.sort((a,b)=>haversine(ST.userLat,ST.userLng,a.lat,a.lng)-haversine(ST.userLat,ST.userLng,b.lat,b.lng));
+  return list;
+}
+function renderStudios(){
+  const list=getSorted();
+  const el=document.getElementById('studioList');
+  if(!list.length){ el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:40px 0;font-size:14px">No studios match.</div>`; return; }
+  el.innerHTML=list.map((s,idx)=>{
+    const d=distLabel(s);
+    const nearest=idx===0&&ST.userLat!==null;
+    return `<div class="studio-card" onclick="openStudio(${s.id})">
+      <div class="card-cover" style="background:linear-gradient(135deg,${s.cover[0]},${s.cover[1]})">
+        <div class="dist-chip">📍 ${d?`${d} away`:s.area}</div>
+        ${nearest?`<div class="nearest-badge">Nearest ✓</div>`:''}
+      </div>
+      <div class="card-body">
+        <div class="card-top"><div class="card-name">${s.name}</div><div class="card-rating">⭐ ${s.rating}</div></div>
+        <div class="card-loc">📍 ${s.area} · ${s.reviews} reviews</div>
+        <div class="card-tags">${s.styles.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function setFilter(sty,el){ document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); ST.filter=sty==='all'?null:sty; renderStudios(); }
+
+/* ── STUDIO ── */
+function openStudio(id){
+  const s=STUDIOS.find(x=>x.id===id); ST.studio=s; ST.view='parlour';
+  const d=distLabel(s);
+  document.getElementById('parlourWrap').innerHTML=`
+    <div class="detail-cover" style="background:linear-gradient(135deg,${s.cover[0]},${s.cover[1]})">✦</div>
+    <h1 class="detail-title">${s.name}</h1>
+    <div class="detail-meta">
+      <span>⭐ ${s.rating} (${s.reviews} reviews)</span><span>📍 ${s.area}</span>
+      ${d?`<span style="color:var(--green)">🚶 ${d} from you</span>`:''}
+    </div>
+    <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:16px">Artists</div>
+    <div class="artist-grid">${s.artists.map(a=>`
+      <div class="artist-card" onclick="openArtist(${s.id},${a.id})">
+        <div class="avatar" style="background:linear-gradient(135deg,${a.colors[0]},${a.colors[2]})">${a.name[0]}</div>
+        <div style="flex:1">
+          <div class="a-name">${a.name}</div><div class="a-spec">${a.spec}</div>
+          <div class="a-bio">${a.bio}</div>
+          <div class="a-foot"><span class="a-rate">${a.rate}</span><button class="btn-sm" onclick="event.stopPropagation();openArtist(${s.id},${a.id})">Book</button></div>
+        </div>
+      </div>`).join('')}</div>`;
+  showView('parlourView');
+}
+
+/* ── ARTIST ── */
+function openArtist(sid,aid){
+  const s=STUDIOS.find(x=>x.id===sid), a=s.artists.find(x=>x.id===aid);
+  ST.studio=s; ST.artist=a; ST.slot=null; ST.view='artist';
+  document.getElementById('artistWrap').innerHTML=`
+    <div style="display:flex;gap:18px;align-items:flex-start;margin-bottom:26px">
+      <div class="avatar" style="width:72px;height:72px;font-size:26px;flex-shrink:0;background:linear-gradient(135deg,${a.colors[0]},${a.colors[2]})">${a.name[0]}</div>
+      <div>
+        <h2 style="font-family:'Cinzel',serif;font-size:20px;margin-bottom:4px">${a.name}</h2>
+        <div style="font-size:12px;color:var(--gold);margin-bottom:8px">${a.spec}</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.65">${a.bio}</div>
+      </div>
+    </div>
+    <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Portfolio</div>
+    <div class="port-grid">${a.icons.map((ic,i)=>{const p=i%3,pairs=[[a.colors[0],a.colors[1]],[a.colors[1],a.colors[2]],[a.colors[2],a.colors[0]]];return`<div class="port-tile" style="background:linear-gradient(135deg,${pairs[p][0]},${pairs[p][1]})">${ic}</div>`;}).join('')}</div>
+    <div style="font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Pick a Slot</div>
+    <div class="slots-grid">${a.slots.map(sl=>`<div class="slot-btn" onclick="pickSlot('${sl}',this)">${sl}</div>`).join('')}</div>
+    <label class="f-label">Describe Your Idea</label>
+    <textarea rows="4" placeholder="Placement, size, references, anything…"></textarea>
+    <button class="btn-primary" id="bookBtn" disabled onclick="doConfirm()">Confirm Booking</button>`;
+  showView('artistView');
+}
+function pickSlot(s,el){ document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('on')); el.classList.add('on'); ST.slot=s; document.getElementById('bookBtn').disabled=false; }
+function doConfirm(){
+  const s=ST.studio,a=ST.artist;
+  document.getElementById('confirmWrap').innerHTML=`
+    <div class="confirm-icon">✦</div>
+    <div class="confirm-title">You're Booked!</div>
+    <div class="confirm-sub">${a.name} will confirm within 24 hours.</div>
+    <div class="confirm-card">
+      ${[["Studio",s.name],["Artist",a.name],["Slot",ST.slot],["Rate",a.rate],["Location",s.area]].map(([l,v])=>`<div class="c-row"><span class="c-label">${l}</span><span>${v}</span></div>`).join('')}
+    </div>
+    <button class="btn-primary" onclick="goHome()">← Find More Artists</button>`;
+  showView('confirmView');
+}
+
+/* ── ROUTING ── */
+const VIEWS=['homeView','parlourView','artistView','confirmView'];
+function showView(id){ VIEWS.forEach(v=>document.getElementById(v).classList.toggle('active',v===id)); document.getElementById('navBack').style.display=id==='homeView'?'none':'flex'; window.scrollTo({top:0,behavior:'smooth'}); }
+function goBack(){ if(ST.view==='confirm'){openArtist(ST.studio.id,ST.artist.id);return;} if(ST.view==='artist'){openStudio(ST.studio.id);return;} goHome(); }
+function goHome(){ ST.view='home'; showView('homeView'); renderStudios(); }
+
+/* ── AI ── */
+async function askAI(){
+  const q=document.getElementById('aiIn').value.trim(); if(!q)return;
+  document.getElementById('aiBtn').disabled=true;
+  document.getElementById('aiDots').style.display='flex';
+  document.getElementById('aiOut').style.display='none';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are a tattoo style consultant for INKFIND Bengaluru. Studios: Black Lotus (Blackwork,Fine Line,Geometric-Indiranagar), Ink & Iron (Japanese,Neo-Traditional,Realism-Koramangala), Chromatic Skin (Watercolour,Illustrative,Surrealism-Jayanagar), Needle & Thread (Minimalist,Script,Dotwork-HSR), Sacred Skin (Mandala,Spiritual,Ornamental-Whitefield). Be warm, specific, max 3 sentences.`,messages:[{role:'user',content:q}]})});
+    const data=await res.json();
+    document.getElementById('aiOut').textContent=data.content?.[0]?.text||'Try again!';
+    document.getElementById('aiOut').style.display='block';
+  }catch{ document.getElementById('aiOut').textContent='Connection error.'; document.getElementById('aiOut').style.display='block'; }
+  document.getElementById('aiDots').style.display='none';
+  document.getElementById('aiBtn').disabled=false;
+}
+
+/* ── LOGIN ── */
+function tryLogin(){
+  if(document.getElementById('pwIn').value==='admin123'){
+    ST.isAdmin=true;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainNav').style.display='flex';
+    document.getElementById('adminBtn').style.display='block';
+    buildHome();
+  } else {
+    document.getElementById('lErr').style.display='block';
+    setTimeout(()=>document.getElementById('lErr').style.display='none',3000);
+  }
+}
+function skipLogin(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('mainNav').style.display='flex'; buildHome(); }
+
+/* ── ADMIN ── */
+function openAdmin(){ document.getElementById('adminDrawer').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+function closeAdmin(){ document.getElementById('adminDrawer').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+function livePreview(){
+  const a=document.getElementById('aLogoA').value||'INK', b=document.getElementById('aLogoB').value||'FIND';
+  const gold=document.getElementById('cGold').value, bg=document.getElementById('cBg').value;
+  document.getElementById('prevLogo').childNodes[0].textContent=a;
+  document.getElementById('prevSpan').textContent=b; document.getElementById('prevSpan').style.color=gold;
+  document.getElementById('prevBtn').style.background=gold; document.getElementById('prevBtn').style.color=bg;
+  document.getElementById('prevLogo').style.fontFamily=ST.pendingFont;
+}
+function syncSwatch(cid,swid,hexid){ const v=document.getElementById(cid).value; document.getElementById(swid).style.background=v; document.getElementById(hexid).value=v; }
+function syncHex(cid,hexid,swid){ const v=document.getElementById(hexid).value; if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById(cid).value=v;document.getElementById(swid).style.background=v;livePreview();} }
+function pickFont(f,el){ document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('on')); el.classList.add('on'); ST.pendingFont=f; livePreview(); }
+function applyBrand(){
+  const gold=document.getElementById('cGold').value, bg=document.getElementById('cBg').value;
+  const a=document.getElementById('aLogoA').value||'INK', b=document.getElementById('aLogoB').value||'FIND', city=document.getElementById('aCity').value||'BLR';
+  const r=document.documentElement;
+  r.style.setProperty('--gold',gold); r.style.setProperty('--bg',bg); r.style.setProperty('--logo-font',ST.pendingFont);
+  document.getElementById('appLogo').childNodes[0].textContent=a;
+  document.getElementById('appLogoSpan').textContent=b;
+  document.getElementById('appCity').textContent=city;
+  closeAdmin(); showToast('✓ Brand updated!');
+}
+function resetBrand(){
+  document.getElementById('aLogoA').value='INK'; document.getElementById('aLogoB').value='FIND'; document.getElementById('aCity').value='BLR';
+  document.getElementById('cGold').value='#c9a96e'; document.getElementById('cBg').value='#09090c';
+  ST.pendingFont='Cinzel, serif';
+  document.querySelectorAll('.font-btn').forEach((b,i)=>b.classList.toggle('on',i===0));
+  livePreview(); applyBrand();
+}
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+</script>
+</body>
+</html>
